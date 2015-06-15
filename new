@@ -1,0 +1,211 @@
+boolean(true).
+boolean(false).
+fluent_type(defined).
+fluent_type(inertial).
+agent(b).
+agent(j).
+agent_action(X):-physical_action(X).
+agent_action(X):-mental_action(X).
+possible_action(X):-agent_action(X).
+possible_action(X):-exogenous_action(X).
+room(1..4).
+step(0..10).
+comp(1..10).
+comp(X):-physical_action(X).
+index(0..11).
+created_activity(1..10).
+activity(X):-created_activity(X).
+activity(d).
+physical_action(move(b,R1,R2)):-connected(R1,R2).
+exogenous_action(move(j,R1,R2)):-connected(R1,R2).
+possible_fluent(in(A,R)):-agent(A),room(R).
+possible_fluent(meet(A1,A2)):-agent(A1),agent(A2),A1!=A2.
+possible_fluent(meet(A1,A2)):-agent(A1),agent(A2),A1!=A2.
+possible_fluent(minor_goal(G)):-possible_goal(G).
+possible_fluent(minor_activity(M)):-activity(M).
+possible_fluent(active_activity(M)):-activity(M).
+possible_fluent(active_goal(G)):-possible_goal(G).
+possible_fluent(status(M,K)):-activity(M),index(K).
+possible_fluent(curr_subact(M1,M)):-activity(M),activity(M1),M1!=M.
+possible_fluent(failure(M)):-activity(M).
+possible_fluent(success(M)):-activity(M).
+possible_fluent(cancelled(M)):-activity(M).
+possible_fluent(irrelevant(M)):-activity(M).
+possible_fluent(in_progress_activity(M)):-activity(M).
+possible_fluent(in_progress_goal(G)):-possible_goal(G).
+possible_fluent(name(X)):-created_activity(X).
+possible_fluent(intended_action(M,AA)):-activity(M),agent_action(AA).
+possible_fluent(form_activity(M,G)):-activity(M),possible_goal(G).
+possible_fluent(building_on_fire).
+possible_action(stop(M)):-activity(M).
+possible_action(start(M)):-activity(M).
+possible_action(select(G)):-possible_goal(G).
+possible_action(abandon(G)):-possible_goal(G).
+possible_action(make_explanation).
+possible_action(bakesbread(A)):-agent(A).
+possible_action(extinguish_fire(A)):-agent(A).
+created_activity(1..10).
+activity(X):-created_activity(X).
+possible_goal(meet(b,j)).
+is_agentAction(X):-agent_action(X).
+is_exogenousAction(X):-exogenous_action(X).
+possible_action(delay(A)):-agent(A).
+possible_fluent(triggered_action(A)):-possible_action(A).
+o(A,I) :- possible_action(A),step(I),possible_fluent(F),trigger(F,A),h(F,I),not -o(A,I).
+h(triggered_action(A),I) :- possible_fluent(triggered_action(A)),step(I),possible_fluent(F),possible_action(A),trigger(F,A),h(F,I),o(A,I).
+connected(1,2) :- room(1),room(2).
+connected(2,3) :- room(2),room(3).
+connected(3,4) :- room(3),room(4).
+connected(4,5) :- room(4),room(5).
+connected(5,6) :- room(5),room(6).
+connected(outside,1) :- room(outside),room(1).
+connected(outside,2) :- room(outside),room(2).
+connected(outside,3) :- room(outside),room(3).
+connected(outside,4) :- room(outside),room(4).
+connected(outside,5) :- room(outside),room(5).
+connected(outside,6) :- room(outside),room(6).
+connected(R1,R2) :- room(R1),room(R2),connected(R2,R1).
+fluent(in(A,R),inertial) :- possible_fluent(in(A,R)),fluent_type(inertial).
+fluent(meet(A1,A2),defined) :- possible_fluent(meet(A1,A2)),fluent_type(defined),A1!=A2.
+fluent(building_on_fire,inertial) :- possible_fluent(building_on_fire),fluent_type(inertial).
+h(F,VAR_0) :- possible_fluent(F),step(VAR_0),step(I),step(VAR_1),fluent_type(inertial),VAR_0=I+1,VAR_1=I+1,h(F,I),not -h(F,VAR_1),I<16,fluent(F,inertial).
+-h(F,VAR_0) :- possible_fluent(F),step(VAR_0),step(I),step(VAR_1),fluent_type(inertial),VAR_0=I+1,VAR_1=I+1,-h(F,I),not h(F,VAR_1),I<16,fluent(F,inertial).
+h(meet(A1,A2),I) :- possible_fluent(meet(A1,A2)),step(I),possible_fluent(in(A1,R)),possible_fluent(in(A2,R)),A1!=A2,h(in(A1,R),I),h(in(A2,R),I).
+h(meet(A2,A1),I) :- possible_fluent(meet(A2,A1)),step(I),possible_fluent(meet(A1,A2)),h(meet(A1,A2),I).
+-h(F,I) :- possible_fluent(F),step(I),fluent_type(defined),fluent(F,defined),not h(F,I).
+h(in(A,R2),VAR_0) :- possible_fluent(in(A,R2)),step(VAR_0),possible_action(move(A,R1,R2)),step(I),VAR_0=I+1,o(move(A,R1,R2),I).
+-h(in(A,R2),I) :- possible_fluent(in(A,R2)),step(I),possible_fluent(in(A,R1)),h(in(A,R1),I),R1!=R2.
+-o(move(A,R1,R2),I) :- possible_action(move(A,R1,R2)),step(I),possible_fluent(in(A,R1)),-h(in(A,R1),I).
+-o(move(A1,R1,R2),I) :- possible_action(move(A1,R1,R2)),step(I),possible_action(move(A2,R1,R2)),o(move(A2,R1,R2),I),A1!=A2.
+-o(move(A1,R1,R2),I) :- possible_action(move(A1,R1,R2)),step(I),possible_action(move(A2,R2,R1)),o(move(A2,R2,R1),I).
+exogenous_action(delay(b)) :- possible_action(delay(b)).
+-o(move(A,R1,R2),I) :- possible_action(move(A,R1,R2)),step(I),possible_action(delay(A)),o(delay(A),I).
+:- possible_fluent(F),boolean(false),step(I),step(I1),obs(F,false,I),h(F,I),currstep(I1),I<I1.
+:- possible_fluent(F),boolean(true),step(I),step(I1),obs(F,true,I),-h(F,I),currstep(I1),I<I1.
+inconsistent_obs(F,false,I) :- possible_fluent(F),boolean(false),step(I),obs(F,false,I),h(F,I).
+inconsistent_obs(F,true,I) :- possible_fluent(F),boolean(true),step(I),obs(F,true,I),-h(F,I).
+o(E,I) :- possible_action(E),step(I),hpd(E,I).
+h(F,0) :- possible_fluent(F),step(0),boolean(true),obs(F,true,0).
+-h(F,0) :- possible_fluent(F),step(0),boolean(false),obs(F,false,0).
+fluent(active_activity(M),defined) :- possible_fluent(active_activity(M)),fluent_type(defined).
+fluent(status(M,K),inertial) :- possible_fluent(status(M,K)),fluent_type(inertial).
+-h(status(M,K1),I) :- possible_fluent(status(M,K1)),step(I),possible_fluent(status(M,K2)),h(status(M,K2),I),K1!=K2.
+h(status(M,11),0) :- possible_fluent(status(M,11)),step(0),not -h(status(M,11),0).
+-o(E,I) :- possible_action(E),step(I),possible_action(Ma),o(Ma,I),E!=Ma,mental_action(Ma).
+mental_action(start(M)) :- possible_action(start(M)).
+mental_action(stop(M)) :- possible_action(stop(M)).
+h(status(M,0),VAR_0) :- possible_fluent(status(M,0)),step(VAR_0),possible_action(start(M)),step(I),VAR_0=I+1,o(start(M),I).
+h(status(M,11),VAR_0) :- possible_fluent(status(M,11)),step(VAR_0),possible_action(stop(M)),step(I),VAR_0=I+1,o(stop(M),I).
+-o(start(M),I) :- possible_action(start(M)),step(I),possible_fluent(active_activity(M)),h(active_activity(M),I).
+-o(stop(M),I) :- possible_action(stop(M)),step(I),possible_fluent(active_activity(M)),-h(active_activity(M),I).
+h(active_activity(M),I) :- possible_fluent(active_activity(M)),step(I),possible_fluent(status(M,11)),-h(status(M,11),I).
+fluent(curr_subact(M1,M),defined) :- possible_fluent(curr_subact(M1,M)),fluent_type(defined).
+h(curr_subact(M1,M),I) :- possible_fluent(curr_subact(M1,M)),step(I),activity(M),index(VAR_0),comp(M1),possible_fluent(status(M,K)),VAR_0=K+1,component(M,VAR_0,M1),h(status(M,K),I).
+h(curr_subact(M1,M),I) :- possible_fluent(curr_subact(M1,M)),step(I),possible_fluent(curr_subact(M2,M)),possible_fluent(curr_subact(M1,M2)),h(curr_subact(M2,M),I),h(curr_subact(M1,M2),I).
+fluent(minor_activity(M),defined) :- possible_fluent(minor_activity(M)),fluent_type(defined).
+fluent(minor_goal(G),defined) :- possible_fluent(minor_goal(G)),fluent_type(defined).
+h(minor_activity(M1),I) :- possible_fluent(minor_activity(M1)),step(I),possible_fluent(curr_subact(M1,M)),h(curr_subact(M1,M),I).
+h(minor_goal(G),I) :- possible_fluent(minor_goal(G)),step(I),possible_fluent(minor_activity(M)),activity(M),possible_goal(G),h(minor_activity(M),I),goal(M,G).
+h(status(M1,11),VAR_0) :- possible_fluent(status(M1,11)),step(VAR_0),possible_action(stop(M)),step(I),possible_fluent(curr_subact(M1,M)),VAR_0=I+1,o(stop(M),I),h(curr_subact(M1,M),I).
+-h(active_goal(G1),VAR_0) :- possible_fluent(active_goal(G1)),step(VAR_0),possible_action(stop(M)),step(I),possible_fluent(curr_subact(M1,M)),activity(M1),possible_goal(G1),VAR_0=I+1,o(stop(M),I),h(curr_subact(M1,M),I),goal(M1,G1).
+fluent(active_goal(G),inertial) :- possible_fluent(active_goal(G)),fluent_type(inertial).
+-h(active_goal(G),0) :- possible_fluent(active_goal(G)),step(0),not h(active_goal(G),0).
+exogenous_action(select(G)) :- possible_action(select(G)).
+exogenous_action(abandon(G)) :- possible_action(abandon(G)).
+h(active_goal(G),VAR_0) :- possible_fluent(active_goal(G)),step(VAR_0),possible_action(select(G)),step(I),VAR_0=I+1,o(select(G),I).
+-h(active_goal(G),VAR_0) :- possible_fluent(active_goal(G)),step(VAR_0),possible_action(abandon(G)),step(I),VAR_0=I+1,o(abandon(G),I).
+-o(select(G1),I) :- possible_action(select(G1)),step(I),possible_fluent(active_goal(G)),h(active_goal(G),I),G1!=G.
+-o(abandon(G),I) :- possible_action(abandon(G)),step(I),possible_fluent(active_goal(G)),-h(active_goal(G),I).
+-o(abandon(G),I) :- possible_action(abandon(G)),step(I),possible_fluent(minor_goal(G)),h(minor_goal(G),I).
+h(active_goal(G1),I) :- possible_fluent(active_goal(G1)),step(I),possible_fluent(active_goal(G)),activity(M),possible_goal(G),possible_fluent(curr_subact(M1,M)),activity(M1),possible_goal(G1),h(active_goal(G),I),goal(M,G),h(curr_subact(M1,M),I),goal(M1,G1).
+-h(active_goal(G1),I) :- possible_fluent(active_goal(G1)),step(I),possible_fluent(active_goal(G)),activity(M),possible_goal(G),possible_fluent(curr_subact(M1,M)),activity(M1),possible_goal(G1),-h(active_goal(G),I),goal(M,G),h(curr_subact(M1,M),I),goal(M1,G1).
+fluent(cancelled(M),defined) :- possible_fluent(cancelled(M)),fluent_type(defined).
+h(cancelled(M),I) :- possible_fluent(cancelled(M)),step(I),possible_fluent(active_action(M)),possible_fluent(active_goal(G)),activity(M),possible_goal(G),h(active_action(M),I),-h(active_goal(G),I),goal(M,G).
+fluent(success(M),defined) :- possible_fluent(success(M)),fluent_type(defined).
+h(success(M),I) :- possible_fluent(success(M)),step(I),possible_fluent(active_activity(M)),activity(M),possible_goal(G),possible_fluent(G),possible_fluent(cancelled(M)),h(active_activity(M),I),goal(M,G),h(G,I),-h(cancelled(M),I).
+-h(active_goal(G),VAR_0) :- possible_fluent(active_goal(G)),step(VAR_0),possible_action(stop(M)),step(I),activity(M),possible_goal(G),possible_fluent(success(M)),VAR_0=I+1,o(stop(M),I),goal(M,G),h(success(M),I).
+fluent(failure(M),defined) :- possible_fluent(failure(M)),fluent_type(defined).
+h(failure(M),I) :- possible_fluent(failure(M)),step(I),activity(M),index(K),possible_fluent(status(M,K)),possible_fluent(success(M)),possible_fluent(cancelled(M)),length(M,K),h(status(M,K),I),-h(success(M),I),-h(cancelled(M),I).
+h(failure(M),I) :- possible_fluent(failure(M)),step(I),possible_fluent(status(M,K)),activity(M),index(VAR_0),comp(M1),possible_fluent(failure(M1)),possible_fluent(success(M)),possible_fluent(cancelled(M)),VAR_0=K+1,h(status(M,K),I),component(M,VAR_0,M1),h(failure(M1),I),-h(success(M),I),-h(cancelled(M),I).
+fluent(in_progress_activity(M),defined) :- possible_fluent(in_progress_activity(M)),fluent_type(defined).
+h(in_progress_activity(M),I) :- possible_fluent(in_progress_activity(M)),step(I),possible_fluent(active_activity(M)),possible_fluent(cancelled(M)),possible_fluent(success(M)),possible_fluent(failure(M)),h(active_activity(M),I),-h(cancelled(M),I),-h(success(M),I),-h(failure(M),I).
+fluent(irrelevant(M),defined) :- possible_fluent(irrelevant(M)),fluent_type(defined).
+h(irrelevant(M1),I) :- possible_fluent(irrelevant(M1)),step(I),possible_fluent(curr_subact(M1,M)),possible_fluent(success(M)),h(curr_subact(M1,M),I),h(success(M),I).
+h(irrelevant(M1),I) :- possible_fluent(irrelevant(M1)),step(I),possible_fluent(curr_subact(M1,M)),possible_fluent(failure(M)),h(curr_subact(M1,M),I),h(failure(M),I).
+h(irrelevant(M1),I) :- possible_fluent(irrelevant(M1)),step(I),possible_fluent(curr_subact(M1,M)),possible_fluent(cancelled(M)),h(curr_subact(M1,M),I),h(cancelled(M),I).
+fluent(intended_action(M,Aa),defined) :- possible_fluent(intended_action(M,Aa)),fluent_type(defined).
+h(intended_action(M,PA),I) :- possible_fluent(intended_action(M,PA)),step(I),possible_fluent(status(M,K)),activity(M),index(VAR_0),comp(PA),possible_fluent(in_progress_activity(M)),possible_fluent(irrelevant(M)),possible_action(PA),VAR_0=K+1,h(status(M,K),I),component(M,VAR_0,PA),h(in_progress_activity(M),I),-h(irrelevant(M),I),physical_action(PA).
+h(intended_action(M,start(M1)),I) :- possible_fluent(intended_action(M,start(M1))),step(I),possible_fluent(status(M,K)),activity(M),index(VAR_0),comp(M1),possible_fluent(in_progress_activity(M)),possible_fluent(active_activity(M1)),possible_fluent(irrelevant(M1)),VAR_0=K+1,h(status(M,K),I),component(M,VAR_0,M1),h(in_progress_activity(M),I),-h(active_activity(M1),I),-h(irrelevant(M1),I).
+h(intended_action(M,stop(M)),I) :- possible_fluent(intended_action(M,stop(M))),step(I),possible_fluent(failure(M)),possible_fluent(irrelevant(M)),h(failure(M),I),-h(irrelevant(M),I).
+h(intended_action(M,stop(M)),I) :- possible_fluent(intended_action(M,stop(M))),step(I),possible_fluent(success(M)),possible_fluent(irrelevant(M)),h(success(M),I),-h(irrelevant(M),I).
+h(intended_action(M,stop(M)),I) :- possible_fluent(intended_action(M,stop(M))),step(I),possible_fluent(cancelled(M)),possible_fluent(irrelevant(M)),h(cancelled(M),I),-h(irrelevant(M),I).
+h(intended_action(M,A),I) :- possible_fluent(intended_action(M,A)),step(I),possible_fluent(triggered_action(A)),h(triggered_action(A),I).
+h(intended_action(M,Aa),I) :- possible_fluent(intended_action(M,Aa)),step(I),possible_fluent(intended_action(M1,Aa)),possible_fluent(curr_subact(M1,M)),possible_fluent(in_progress_activity(M)),h(intended_action(M1,Aa),I),h(curr_subact(M1,M),I),h(in_progress_activity(M),I).
+h(status(M,VAR_0),VAR_1) :- possible_fluent(status(M,VAR_0)),step(VAR_1),possible_action(PA),step(I),possible_fluent(intended_action(M,PA)),possible_fluent(status(M,K)),activity(M),index(VAR_2),comp(PA),VAR_0=K+1,VAR_1=I+1,VAR_2=K+1,o(PA,I),h(intended_action(M,PA),I),h(status(M,K),I),component(M,VAR_2,PA),physical_action(PA).
+h(status(M,VAR_0),VAR_1) :- possible_fluent(status(M,VAR_0)),step(VAR_1),possible_action(stop(M1)),step(I),possible_fluent(intended_action(M1,stop(M1))),possible_fluent(status(M,K)),activity(M),index(VAR_2),comp(M1),VAR_0=K+1,VAR_1=I+1,VAR_2=K+1,o(stop(M1),I),h(intended_action(M1,stop(M1)),I),h(status(M,K),I),component(M,VAR_2,M1).
+o(Aa,I) :- possible_action(Aa),step(I),possible_fluent(intended_action(M,Aa)),agent_action(Aa),h(intended_action(M,Aa),I),is_agentAction(Aa),not -o(Aa,I),I<16.
+-o(E,I) :- possible_action(E),step(I),possible_action(abandon(G)),possible_fluent(intended_action(M,E)),o(abandon(G),I),h(intended_action(M,E),I).
+intended(PA,I) :- agent_action(PA),step(I),possible_fluent(intended_action(M,PA)),possible_action(PA),h(intended_action(M,PA),I),physical_action(PA).
+-o(PA,I) :- possible_action(PA),step(I),possible_fluent(active_activity(M)),agent_action(PA),h(active_activity(M),I),not intended(PA,I),physical_action(PA).
+mental_action(make_explanation) :- possible_action(make_explanation).
+o(make_explanation,I) :- possible_action(make_explanation),step(I),possible_fluent(F),boolean(B),inconsistent_obs(F,B,I).
+o(EA,I2) :- possible_action(EA),step(I2),possible_action(make_explanation),step(I1),hpd(make_explanation,I1),I2<I1,exogenous_action(EA),appl(r0(EA,I2,I1)).
+:~ possible_action(EA),step(I2),possible_action(make_explanation),step(I1),hpd(make_explanation,I1),I2<I1,exogenous_action(EA),appl(r0(EA,I2,I1)).
+appl(r0(EA,I2,I1)) | -appl(r0(EA,I2,I1)) :- possible_action(EA),step(I2),possible_action(make_explanation),step(I1),hpd(make_explanation,I1),I2<I1,exogenous_action(EA).
+:- possible_fluent(F),boolean(true),step(I),step(VAR_0),step(VAR_1),VAR_0=I+1,VAR_1=I+1,inconsistent_obs(F,true,I),currstep(VAR_0),-h(F,VAR_1).
+:- possible_fluent(F),boolean(false),step(I),step(VAR_0),step(VAR_1),VAR_0=I+1,VAR_1=I+1,inconsistent_obs(F,false,I),currstep(VAR_0),h(F,VAR_1).
+unobserved(EA,I) :- exogenous_action(EA),step(I),possible_action(EA),o(EA,I),not hpd(EA,I),exogenous_action(EA).
+:- exogenous_action(EA1),step(I1),possible_action(EA1),exogenous_action(EA2),step(I2),possible_action(EA2),unobserved(EA1,I1),exogenous_action(EA1),unobserved(EA2,I2),exogenous_action(EA2),EA1!=EA2.
+fluent(name(X),inertial) :- possible_fluent(name(X)),fluent_type(inertial).
+h(name(1),0) :- possible_fluent(name(1)),step(0).
+h(name(VAR_0),VAR_1) :- possible_fluent(name(VAR_0)),step(VAR_1),possible_action(start(X)),step(I),possible_fluent(name(X)),VAR_0=X+1,VAR_1=I+1,o(start(X),I),h(name(X),I).
+-h(name(M),I) :- possible_fluent(name(M)),step(I),possible_fluent(name(M1)),h(name(M1),I),M!=M1.
+fluent(in_progress_goal(G),defined) :- possible_fluent(in_progress_goal(G)),fluent_type(defined).
+h(in_progress_goal(G),I) :- possible_fluent(in_progress_goal(G)),step(I),possible_fluent(active_activity(M)),activity(M),possible_goal(G),h(active_activity(M),I),goal(M,G).
+fluent(form_activity(M,G),defined) :- possible_fluent(form_activity(M,G)),fluent_type(defined).
+h(form_activity(M,G),I) :- possible_fluent(form_activity(M,G)),step(I),possible_fluent(active_goal(G)),possible_fluent(minor_goal(G)),possible_fluent(name(M)),possible_fluent(in_progress_goal(G)),step(I1),h(active_goal(G),I),-h(minor_goal(G),I),h(name(M),I),-h(in_progress_goal(G),I),currstep(I1),I<=I1.
+goal(M,G) :- activity(M),possible_goal(G),possible_fluent(form_activity(M,G)),step(I),h(form_activity(M,G),I).
+component(M,K,C) :- activity(M),index(K),comp(C),possible_fluent(form_activity(M,G)),step(I),h(form_activity(M,G),I),currstep(I),0<K,appl(r1(M,K,C,G,I)).
+:~ activity(M),index(K),comp(C),possible_fluent(form_activity(M,G)),step(I),h(form_activity(M,G),I),currstep(I),0<K,appl(r1(M,K,C,G,I)).
+appl(r1(M,K,C,G,I)) | -appl(r1(M,K,C,G,I)) :- activity(M),index(K),comp(C),possible_fluent(form_activity(M,G)),step(I),h(form_activity(M,G),I),currstep(I),0<K.
+:- activity(M),index(K),comp(M),component(M,K,M).
+:- activity(M),index(K),comp(C),comp(C1),component(M,K,C),component(M,K,C1),C1!=C.
+:- activity(M),index(K),comp(C),index(K1),component(M,K,C),length(M,K1),K>K1.
+:- step(I),possible_fluent(form_activity(M,G)),activity(M),currstep(I),h(form_activity(M,G),I),not projected_success(M).
+projected_success(M) :- activity(M),step(I),possible_fluent(form_activity(M,G)),possible_fluent(success(M)),step(I2),currstep(I),h(form_activity(M,G),I),h(success(M),I2),I<I2.
+has_comp(M,K) :- activity(M),index(K),comp(C),component(M,K,C).
+length(M,K) :- activity(M),index(K),index(VAR_0),VAR_0=K+1,has_comp(M,K),not has_comp(M,VAR_0).
+h(intended_action(M,start(M)),I) :- possible_fluent(intended_action(M,start(M))),step(I),possible_fluent(form_activity(M,G)),h(form_activity(M,G),I).
+currstep(I) :- step(I),in_history(I),not after(I).
+in_history(VAR_0) :- step(VAR_0),possible_action(E),step(I),VAR_0=I+1,hpd(E,I).
+in_history(I) :- step(I),possible_fluent(F),boolean(B),obs(F,B,I).
+after(I) :- step(I),step(I1),in_history(I),in_history(I1),I<I1.
+-o(Aa,I) :- possible_action(Aa),step(I),step(I1),agent_action(Aa),currstep(I1),I<I1,is_agentAction(Aa),not hpd(Aa,I).
+-o(EA,I) :- possible_action(EA),step(I),step(I1),exogenousAction(EA),currstep(I1),I<I1,not hpd(EA,I),is_exogenousAction(EA),not o(EA,I).
+occurs(E,I) :- possible_action(E),step(I),o(E,I).
+neg_occ(E,I) :- possible_action(E),step(I),-o(E,I).
+holds(Fl,I) :- possible_fluent(Fl),step(I),h(Fl,I).
+status(M,K,I) :- activity(M),index(K),step(I),possible_fluent(status(M,K)),h(status(M,K),I).
+success(M,I) :- activity(M),step(I),possible_fluent(success(M)),h(success(M),I).
+failure(M,I) :- activity(M),step(I),possible_fluent(failure(M)),h(failure(M),I).
+cancelled(M,I) :- activity(M),step(I),possible_fluent(cancelled(M)),h(cancelled(M),I).
+intended_index(M,E,I) :- activity(M),possible_action(E),step(I),possible_fluent(intended_action(M,E)),h(intended_action(M,E),I).
+intended_index(d,E,I) :- activity(d),possible_action(E),step(I),possible_fluent(intended_action(d,E)),h(intended_action(d,E),I).
+in_progress_activity(M,I) :- activity(M),step(I),possible_fluent(in_progress_activity(M)),h(in_progress_activity(M),I).
+neg_ip(G) :- possible_goal(G),possible_fluent(in_progress_goal(G)),step(I),-h(in_progress_goal(G),I).
+act_formed(M,G,I) :- activity(M),possible_goal(G),step(I),possible_fluent(form_activity(M,G)),h(form_activity(M,G),I).
+active_activity(M,I) :- activity(M),step(I),possible_fluent(active_activity(M)),h(active_activity(M),I).
+active_goal(G,I) :- possible_goal(G),step(I),possible_fluent(active_goal(G)),h(active_goal(G),I).
+inc_fluent(F,I) :- possible_fluent(F),step(I),h(F,I),-h(F,I).
+inc_action(E,I) :- possible_action(E),step(I),o(E,I),-o(E,I).
+meeting(I) :- step(I),possible_fluent(in(b,R)),possible_fluent(in(j,R)),h(in(b,R),I),h(in(j,R),I).
+neg_minor_goal(G,I) :- possible_goal(G),step(I),possible_fluent(minor_goal(G)),-h(minor_goal(G),I).
+neg_minor_activity(M,I) :- activity(M),step(I),possible_fluent(minor_activity(M)),-h(minor_activity(M),I).
+cur_sub(M1,M,I) :- activity(M1),activity(M),step(I),possible_fluent(curr_subact(M1,M)),h(curr_subact(M1,M),I).
+-h(building_on_fire,VAR_0) :- possible_fluent(building_on_fire),step(VAR_0),step(I),possible_action(extinguish_fire(b)),VAR_0=I+1,h(building_on_fire,I),o(extinguish_fire(b),I).
+-o(move(b,R1,R2),I) :- possible_action(move(b,R1,R2)),step(I),possible_action(extinguish_fire(b)),o(extinguish_fire(b),I).
+obs(in(b,1),true,0) :- possible_fluent(in(b,1)),boolean(true),step(0).
+obs(in(j,4),true,0) :- possible_fluent(in(j,4)),boolean(true),step(0).
+h(building_on_fire,3) :- possible_fluent(building_on_fire),step(3).
+trigger(building_on_fire,extinguish_fire(b)) :- possible_fluent(building_on_fire),possible_action(extinguish_fire(b)).
+hpd(select(meet(b,j)),0) :- possible_action(select(meet(b,j))),step(0).
